@@ -1,5 +1,5 @@
 import { createRoot } from 'react-dom/client';
-import Test from './components/Test';
+import Root from './Root';
 
 const root = createRoot(document.body);
-root.render(<Test/>);
+root.render(<Root/>);

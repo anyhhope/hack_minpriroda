@@ -1,4 +1,4 @@
-import { app, BrowserWindow } from 'electron';
+import { app, BrowserWindow, ipcMain, dialog } from 'electron';
 import path from 'path';
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
@@ -13,16 +13,17 @@ const createWindow = () => {
     height: 600,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
+      contextIsolation: false, // Required for ipcRenderer in renderer process
+      nodeIntegration: true, // Required for ipcRenderer in renderer process
     },
   });
 
-  // and load the index.html of the app.
-  if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
-    mainWindow.loadURL(MAIN_WINDOW_VITE_DEV_SERVER_URL);
+  // Load the index.html of the app.
+  if (process.env.MAIN_WINDOW_VITE_DEV_SERVER_URL) {
+    mainWindow.loadURL(process.env.MAIN_WINDOW_VITE_DEV_SERVER_URL);
   } else {
-    mainWindow.loadFile(path.join(__dirname, `../renderer/${MAIN_WINDOW_VITE_NAME}/index.html`));
+    mainWindow.loadFile(path.join(__dirname, `../renderer/${process.env.MAIN_WINDOW_VITE_NAME}/index.html`));
   }
-
 
   mainWindow.setMenuBarVisibility(false);
 };
@@ -49,5 +50,11 @@ app.on('activate', () => {
   }
 });
 
-// In this file you can include the rest of your app's specific main process
-// code. You can also put them in separate files and import them here.
+// Handle file selection dialog
+ipcMain.handle('select-files', async () => {
+  const result = await dialog.showOpenDialog({
+    properties: ['openFile', 'multiSelections'],
+    filters: [{ name: 'Images', extensions: ['jpg', 'png', 'gif'] }],
+  });
+  return result.filePaths;
+});
