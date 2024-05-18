@@ -3,7 +3,7 @@ import { UploadOutlined } from "@ant-design/icons";
 import { Button, message, Upload } from "antd";
 import type { GetProp, UploadFile, UploadProps } from "antd";
 import { IClassRes } from "../../models/index";
-import JSZip, { file } from "jszip";
+import JSZip from "jszip";
 import { saveAs } from "file-saver";
 import { API_HOST } from "../../constant";
 
@@ -41,8 +41,10 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({ onClassRes }) => {
       if (response.ok) {
         const blob = await response.blob();
       
+        // Save the ZIP file locally
         saveAs(blob, "classified_images_with_statistics.zip");
   
+        // Extract metadata.json from the ZIP file
         const zip = await JSZip.loadAsync(blob);
         const metadataFile = zip.file("statistics.json");
         if (metadataFile) {
@@ -55,69 +57,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({ onClassRes }) => {
         setFileList([]);
       }
     } catch (error) {
-      if (error.name === "AbortError") {
-        message.warning("Отмена загрузки");
-      } else {
         message.error("Ошибка. Попробуйте снова");
-      }
-    }
-    finally {
-      setUploading(false);
-    }
-  }
-
-  async function handleUploadPaths() {
-    type fileObgType = {
-      name: string,
-      path: string
-    }
-    const filesData = {}
-    fileList.forEach((file, index) => {
-      const fileObg: fileObgType = {
-        name: file.fileName,
-        path: file.originFileObj.path
-      }
-      filesData
-
-      // filesData.push(fileObg)
-    });
-
-    console.log(filesData)
-    console.log(fileList)
-
-    setUploading(true);
-    abortController.current = new AbortController();
-
-    try {
-      const response = await fetch("http://127.0.0.1:5000/uploadPaths", {
-        method: "POST",
-        body: filesData,
-        redirect: "follow",
-        signal: abortController.current.signal,
-      });
-
-      if (response.ok) {
-        const blob = await response.blob();
-      
-        saveAs(blob, "classified_images_with_statistics.zip");
-  
-        const zip = await JSZip.loadAsync(blob);
-        const metadataFile = zip.file("statistics.json");
-        if (metadataFile) {
-          const metadataContent = await metadataFile.async("string");
-          const result = JSON.parse(metadataContent);
-          console.log(result);
-          onClassRes(result);  
-        } 
-  
-        setFileList([]);
-      }
-    } catch (error) {
-      if (error.name === "AbortError") {
-        message.warning("Отмена загрузки");
-      } else {
-        message.error("Ошибка. Попробуйте снова");
-      }
     }
     finally {
       setUploading(false);

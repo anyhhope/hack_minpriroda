@@ -15,6 +15,11 @@ yolo_model = YOLO("yolo-first.pt")
 def home():
     return "Welcome to the Mock Image Metadata API!"
 
+@app.route('/uploadPaths', methods=['POST'])
+def upload_path():
+    
+    return
+
 @app.route('/upload', methods=['POST'])
 def upload():
     if 'files' not in request.files:
@@ -60,7 +65,7 @@ def upload():
         'numClasses': [class_counts[0], class_counts[1], class_counts[2]]
     }
 
-    combined_zip_buffer = create_combined_zip(zip_files, metadata, stats)
+    combined_zip_buffer = create_combined_zip(zip_files, stats)
 
     return send_file(
         combined_zip_buffer,
@@ -88,7 +93,7 @@ def create_zip_files(class_images):
     return zip_files
 
 
-def create_combined_zip(zip_files, metadata, stats):
+def create_combined_zip(zip_files, stats):
     combined_zip_buffer = io.BytesIO()
     with zipfile.ZipFile(combined_zip_buffer, 'w') as combined_zip:
 
@@ -97,7 +102,6 @@ def create_combined_zip(zip_files, metadata, stats):
             combined_zip.writestr(f'class_{class_label}.zip', zip_buffer.read())
         
         metadata_stats = {
-            # 'metadata': metadata,
             'stats': stats
         }
         combined_zip.writestr('statistics.json', json.dumps(metadata_stats, indent=4))
@@ -106,4 +110,5 @@ def create_combined_zip(zip_files, metadata, stats):
     return combined_zip_buffer
 
 if __name__ == '__main__':
-    app.run(host="0.0.0.0", port=5000, debug=False)
+    app.run(debug=True)
+    # app.run(host="0.0.0.0", port=5000, debug=False)

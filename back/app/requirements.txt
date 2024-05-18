@@ -2,3 +2,6 @@ flask
 pillow
 ultralytics
 flask-cors
+fastapi
+python-multipart
+uvicorn
