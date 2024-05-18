@@ -15,7 +15,7 @@ const MainPage = () => {
   return (
     <>
       <TopBar />
-      <div style={{marginLeft: '150px', marginTop: '100px', display: 'flex'}}>
+      <div style={{marginLeft: '150px', marginTop: '60px', display: 'flex'}}>
         <ImageUploader onClassRes={handleUpdateClassRes}/>
         <ModelResult classRes={classResult}/>
       </div>

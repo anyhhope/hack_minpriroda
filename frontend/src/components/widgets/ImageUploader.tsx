@@ -55,11 +55,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({ onClassRes }) => {
         setFileList([]);
       }
     } catch (error) {
-      if (error.name === "AbortError") {
-        message.warning("Отмена загрузки");
-      } else {
         message.error("Ошибка. Попробуйте снова");
-      }
     } finally {
       setUploading(false);
     }

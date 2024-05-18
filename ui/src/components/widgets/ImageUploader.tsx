@@ -7,7 +7,6 @@ import JSZip from "jszip";
 import { saveAs } from "file-saver";
 import { API_HOST } from "../../constant";
 
-
 type FileType = Parameters<GetProp<UploadProps, "beforeUpload">>[0];
 
 interface ImageUploaderProps {
@@ -16,6 +15,7 @@ interface ImageUploaderProps {
 
 const ImageUploader: React.FC<ImageUploaderProps> = ({ onClassRes }) => {
   const [fileList, setFileList] = useState<UploadFile[]>([]);
+  // const [dirPath, setDirPath] = useState<UploadFile>();
   const [uploading, setUploading] = useState(false);
   const abortController = useRef<AbortController | null>(null);
 
@@ -25,7 +25,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({ onClassRes }) => {
       formdata.append("files", file as FileType);
     });
 
-    console.log(fileList)
+    console.log(fileList);
 
     setUploading(true);
     abortController.current = new AbortController();
@@ -40,27 +40,30 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({ onClassRes }) => {
 
       if (response.ok) {
         const blob = await response.blob();
-      
+
         saveAs(blob, "classified_images_with_statistics.zip");
-  
+
         const zip = await JSZip.loadAsync(blob);
         const metadataFile = zip.file("statistics.json");
         if (metadataFile) {
           const metadataContent = await metadataFile.async("string");
           const result = JSON.parse(metadataContent);
           console.log(result);
-          onClassRes(result);  
-        } 
-  
+          onClassRes(result);
+        }
+
         setFileList([]);
       }
     } catch (error) {
         message.error("Ошибка. Попробуйте снова");
-    }
-    finally {
+    } finally {
       setUploading(false);
     }
   }
+
+  // async function handleUploadDir() {
+  //   console.log(dirPath.path)
+  // }
 
   // const handleCancel = () => {
   //   if (abortController.current) {
@@ -93,10 +96,24 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({ onClassRes }) => {
     fileList,
   };
 
+  // const propsDir: UploadProps = {
+  //   beforeUpload: (file) => {
+  //     if (!dirPath) {
+  //       setDirPath(file);
+  //     }
+  //     return false;
+  //   },
+  //   showUploadList: false,
+  //   directory: true,
+  //   multiple: true,
+  // };
+
   const buttonStyles = {
     marginTop: 16,
     marginRight: 8,
-    ...(fileList.length === 0 || uploading ? { color: 'black', backgroundColor: '#f5f5f5', borderColor: '#AF91C1' } : {}),
+    ...(fileList.length === 0 || uploading
+      ? { color: "black", backgroundColor: "#f5f5f5", borderColor: "#AF91C1" }
+      : {}),
   };
 
   return (
@@ -106,7 +123,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({ onClassRes }) => {
         width: "400px",
         border: "2px dashed lightblue",
         borderRadius: "10px",
-        minHeight: '100px'
+        minHeight: "100px",
       }}
     >
       <p style={{ marginBottom: "10px" }}>
@@ -136,6 +153,17 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({ onClassRes }) => {
       >
         {uploading ? "Происходит классификация" : "Начать загрузку"}
       </Button>
+      {/* <Upload {...propsDir} directory>
+        <Button icon={<UploadOutlined />}>Upload Directory</Button>
+      </Upload>
+      <Button
+        type="primary"
+        onClick={handleUploadDir}
+        loading={uploading}
+        style={buttonStyles}
+      >
+        {uploading ? "Происходит классификация" : "Начать загрузку"}
+      </Button> */}
       {/* <Button
         type="default"
         onClick={handleCancel}

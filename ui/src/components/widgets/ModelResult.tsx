@@ -4,7 +4,7 @@ import { ILineData } from "../../models/index";
 import { useState, useEffect } from "react";
 import PieChart from "./PieChart";
 
-const ModelResult = ({ classRes }: { classRes: IClassRes | null}) => {
+const ModelResult = ({ classRes }: { classRes: IClassRes | null }) => {
   console.log("res", classRes);
   const [pieData, setPieData] = useState<ILineData | null>(null);
 
