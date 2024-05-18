@@ -7,3 +7,8 @@ export interface IClassRes {
 export interface IStats {
     numClasses: number[];
 }
+
+export interface ILineData {
+    labels: string[];
+    data: number[];
+}

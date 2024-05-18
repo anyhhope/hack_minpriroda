@@ -41,10 +41,8 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({ onClassRes }) => {
       if (response.ok) {
         const blob = await response.blob();
       
-        // Save the ZIP file locally
         saveAs(blob, "classified_images_with_statistics.zip");
   
-        // Extract metadata.json from the ZIP file
         const zip = await JSZip.loadAsync(blob);
         const metadataFile = zip.file("statistics.json");
         if (metadataFile) {

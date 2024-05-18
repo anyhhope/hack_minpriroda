@@ -5,7 +5,7 @@ import { useState } from "react";
 import { IClassRes } from "../models/index";
 
 const MainPage = () => {
-  const [classResult, setClassResult] = useState<IClassRes>(null);
+  const [classResult, setClassResult] = useState<IClassRes|null>(null);
 
   const handleUpdateClassRes = (classRes: IClassRes) => {
     setClassResult(classRes);
@@ -15,7 +15,7 @@ const MainPage = () => {
   return (
     <>
       <TopBar />
-      <div style={{marginLeft: '150px', marginTop: '100px', display: 'flex'}}>
+      <div style={{marginLeft: '150px', marginTop: '60px', display: 'flex'}}>
         <ImageUploader onClassRes={handleUpdateClassRes}/>
         <ModelResult classRes={classResult}/>
       </div>

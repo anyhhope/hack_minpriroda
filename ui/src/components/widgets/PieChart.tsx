@@ -26,6 +26,7 @@ export const options = {
     },
 };
 
+
 const emptyData: ChartData<"doughnut", number[], string> = {
     labels: [],
     datasets: []

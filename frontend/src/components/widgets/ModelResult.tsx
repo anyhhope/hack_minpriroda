@@ -4,7 +4,7 @@ import { ILineData } from "../../models/index";
 import { useState, useEffect } from "react";
 import PieChart from "./PieChart";
 
-const ModelResult = ({ classRes }: { classRes: IClassRes }) => {
+const ModelResult = ({ classRes }: { classRes: IClassRes | null }) => {
   console.log("res", classRes);
   const [pieData, setPieData] = useState<ILineData | null>(null);
 
@@ -29,11 +29,20 @@ const ModelResult = ({ classRes }: { classRes: IClassRes }) => {
       </h2>
       {classRes ? (
         <>
-          <div>
+          <p style={{ margin: "20px" }}>
+            Количество изображений для каждого класса
+          </p>
+          <div
+            style={{
+              height: "300px",
+              margin: "30px",
+              marginTop: '5px'
+            }}
+          >
             {pieData && (
               <PieChart
                 lineData={pieData}
-                dataTitle={"Количество изображений каждого класса"}
+                dataTitle={"Количество изображений"}
               />
             )}
           </div>
