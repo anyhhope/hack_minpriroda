@@ -15,25 +15,21 @@ body, html {
   overflow: hidden; /* Prevents scrolling on the body */
 }
 
-/*
-.image-uploader {
-  text-align: center;
+.leaf-container {
+  position: absolute;
 }
 
-.image-container {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  margin-top: 20px;
+.leaf {
+  font-size: 24px;
+  animation: leafFloat linear infinite;
 }
 
-.image-wrapper {
-  border: 1px solid #ddd;
-  padding: 10px;
-  border-radius: 4px;
+@keyframes leafFloat {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-5px);
+  }
 }
 
-.image {
-  max-width: 200px;
-  max-height: 200px;
-} */

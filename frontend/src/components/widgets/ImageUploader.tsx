@@ -1,89 +1,82 @@
 import React, { useState, useRef } from "react";
-import { UploadOutlined, StopOutlined } from "@ant-design/icons";
+import { UploadOutlined } from "@ant-design/icons";
 import { Button, message, Upload } from "antd";
-import type { GetProp, UploadFile, UploadProps } from 'antd';
+import type { GetProp, UploadFile, UploadProps } from "antd";
+import { IClassRes } from "../../models/index";
+import JSZip, { file } from "jszip";
+import { saveAs } from "file-saver";
 
-type FileType = Parameters<GetProp<UploadProps, 'beforeUpload'>>[0];
 
-const App: React.FC = () => {
+type FileType = Parameters<GetProp<UploadProps, "beforeUpload">>[0];
+
+interface ImageUploaderProps {
+  onClassRes: (classRes: IClassRes) => void;
+}
+
+const ImageUploader: React.FC<ImageUploaderProps> = ({ onClassRes }) => {
   const [fileList, setFileList] = useState<UploadFile[]>([]);
   const [uploading, setUploading] = useState(false);
   const abortController = useRef<AbortController | null>(null);
 
   async function handleUpload() {
     const formdata = new FormData();
-    formdata.append("files", fileList[0] as FileType);
+    fileList.forEach((file) => {
+      formdata.append("files", file as FileType);
+    });
 
-    // const requestOptions = {
-    //   method: "POST",
-    //   body: formdata,
-    //   redirect: "follow"
-    // };
+    console.log(fileList)
 
-    // fetch("http://127.0.0.1:5000/upload", requestOptions)
-    //   .then((response) => response.text())
-    //   .then((result) => console.log(result))
-    //   .catch((error) => console.error(error));
+    setUploading(true);
+    abortController.current = new AbortController();
 
-    // // const formData = new FormData();
-    // fileList.forEach((file) => {
-    //   formData.append("files", file.originFileObj as File);
-    // });
-
-    // console.log(formData)
-    // console.log(fileList)
     try {
       const response = await fetch("http://127.0.0.1:5000/upload", {
         method: "POST",
         body: formdata,
-        redirect: "follow"
+        redirect: "follow",
+        signal: abortController.current.signal,
       });
 
-      if (!response.ok) {
-        throw new Error(`Error: ${response.statusText}`);
+      if (response.ok) {
+        const blob = await response.blob();
+      
+        // Save the ZIP file locally
+        saveAs(blob, "classified_images_with_statistics.zip");
+  
+        // Extract metadata.json from the ZIP file
+        const zip = await JSZip.loadAsync(blob);
+        const metadataFile = zip.file("statistics.json");
+        if (metadataFile) {
+          const metadataContent = await metadataFile.async("string");
+          const result = JSON.parse(metadataContent);
+          console.log(result);
+          onClassRes(result);  
+        } 
+  
+        setFileList([]);
+        // const result = await response.json();
+        // setFileList([]);
+        // console.log(result);
+        // onClassRes(result);
       }
-
-      const result = await response.json();
-      console.log(result);
     } catch (error) {
-      console.error("Error uploading files:", error);
+      if (error.name === "AbortError") {
+        message.warning("Отмена загрузки");
+      } else {
+        message.error("Ошибка. Попробуйте снова");
+      }
     }
-    // const formData = new FormData();
-    // fileList.forEach((file) => {
-    //   formData.append("files[]", file.originFileObj as File);
-    // });
-
-    // setUploading(true);
-    // abortController.current = new AbortController();
-
-    // fetch("http://your-backend-url/upload", {
-    //   method: "POST",
-    //   body: formData,
-    //   signal: abortController.current.signal,
-    // })
-    //   .then((response) => response.json())
-    //   .then(() => {
-    //     setFileList([]);
-    //     message.success("Upload successfully.");
-    //   })
-    //   .catch((error) => {
-    //     if (error.name === "AbortError") {
-    //       message.warning("Upload canceled.");
-    //     } else {
-    //       message.error("Upload failed.");
-    //     }
-    //   })
-    //   .finally(() => {
-    //     setUploading(false);
-    //   });
-  }
-
-  const handleCancel = () => {
-    if (abortController.current) {
-      abortController.current.abort();
+    finally {
       setUploading(false);
     }
-  };
+  }
+
+  // const handleCancel = () => {
+  //   if (abortController.current) {
+  //     abortController.current.abort();
+  //     setUploading(false);
+  //   }
+  // };
 
   const props: UploadProps = {
     onRemove: (file) => {
@@ -99,12 +92,20 @@ const App: React.FC = () => {
       } else if (file.type.startsWith("image/")) {
         setFileList((prevList) => [...prevList, file]);
       } else {
-        message.error("You can only upload image files or a single ZIP file.");
+        message.error(
+          "Можно загрузить либо несколько изображений, либо один zip-архив"
+        );
         return false;
       }
       return false;
     },
     fileList,
+  };
+
+  const buttonStyles = {
+    marginTop: 16,
+    marginRight: 8,
+    ...(fileList.length === 0 || uploading ? { color: 'black', backgroundColor: '#f5f5f5', borderColor: '#AF91C1' } : {}),
   };
 
   return (
@@ -114,6 +115,7 @@ const App: React.FC = () => {
         width: "400px",
         border: "2px dashed lightblue",
         borderRadius: "10px",
+        minHeight: '100px'
       }}
     >
       <p style={{ marginBottom: "10px" }}>
@@ -139,21 +141,21 @@ const App: React.FC = () => {
         onClick={handleUpload}
         disabled={fileList.length === 0 || uploading}
         loading={uploading}
-        style={{ marginTop: 16, marginRight: 8 }}
+        style={buttonStyles}
       >
-        {uploading ? "Загрузка" : "Начать загрузку"}
+        {uploading ? "Происходит классификация" : "Начать загрузку"}
       </Button>
-      <Button
+      {/* <Button
         type="default"
         onClick={handleCancel}
         icon={<StopOutlined />}
         style={{ marginTop: 16 }}
         disabled={fileList.length === 0 || !uploading}
       >
-        Отменить загрузку
-      </Button>
+        Отменить детекцию
+      </Button> */}
     </div>
   );
 };
 
-export default App;
+export default ImageUploader;

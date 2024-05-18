@@ -1,14 +1,13 @@
-from flask import Flask, request, jsonify
-from PIL import Image
+from flask import Flask, request, jsonify, send_file
 import zipfile
 import io
-import os
+import json
+from PIL import Image
 from flask_cors import CORS
 from ultralytics import YOLO
-import torch
 
 app = Flask(__name__)
-CORS(app) 
+CORS(app)
 
 yolo_model = YOLO("yolo-first.pt")
 
@@ -22,6 +21,8 @@ def upload():
         return jsonify(error="No files provided"), 400
 
     files = request.files.getlist('files')
+    class_images = {0: [], 1: [], 2: []}
+    class_counts = {0: 0, 1: 0, 2: 0}
     metadata = []
 
     for file in files:
@@ -30,34 +31,79 @@ def upload():
                 for zip_info in zip_ref.infolist():
                     if not zip_info.filename.endswith('/'):
                         with zip_ref.open(zip_info) as image_file:
-                            img = Image.open(io.BytesIO(image_file.read()))
+                            file_bytes = image_file.read()
+                            img = Image.open(io.BytesIO(file_bytes))
+                            class_label = detect_img_with_yolo(img)
+                            class_images[class_label].append((zip_info.filename, file_bytes))
+                            class_counts[class_label] += 1
                             metadata.append({
                                 'filename': zip_info.filename,
                                 'width': img.width,
-                                'height': img.height
+                                'height': img.height,
+                                'class': class_label
                             })
-                            return jsonify(detect_img_with_yolo(img))
         else:
-            img = Image.open(file.stream)
+            file_bytes = file.read()
+            img = Image.open(io.BytesIO(file_bytes))
+            class_label = detect_img_with_yolo(img)
+            class_images[class_label].append((file.filename, file_bytes))
+            class_counts[class_label] += 1
             metadata.append({
                 'filename': file.filename,
                 'width': img.width,
-                'height': img.height
+                'height': img.height,
+                'class': class_label
             })
-            return jsonify(detect_img_with_yolo(img))
 
-    return jsonify(metadata)
+    zip_files = create_zip_files(class_images)
+    stats = {
+        'numClasses': [class_counts[0], class_counts[1], class_counts[2]]
+    }
+
+    combined_zip_buffer = create_combined_zip(zip_files, metadata, stats)
+
+    return send_file(
+        combined_zip_buffer,
+        mimetype='application/zip',
+        as_attachment=True,
+        download_name='classified_images_with_statistics.zip'
+    )
 
 
 def detect_img_with_yolo(img):
-    results = yolo_model([img])
+    results = yolo_model([img], device="cpu")
     for res in results:
-        return {"probs": res.boxes.cls.tolist()}
-        boxes = res.boxes
-        for box in boxes:
-            b = box.xyxy[0]
-            c = box.cls
-            return {"class": c}
+        return int(res.boxes.cls.mode()[0])  
+
+
+def create_zip_files(class_images):
+    zip_files = {}
+    for class_label, images in class_images.items():
+        zip_buffer = io.BytesIO()
+        with zipfile.ZipFile(zip_buffer, 'w') as zipf:
+            for filename, file_bytes in images:
+                zipf.writestr(filename, file_bytes)
+        zip_buffer.seek(0)
+        zip_files[class_label] = zip_buffer
+    return zip_files
+
+
+def create_combined_zip(zip_files, metadata, stats):
+    combined_zip_buffer = io.BytesIO()
+    with zipfile.ZipFile(combined_zip_buffer, 'w') as combined_zip:
+
+        for class_label, zip_buffer in zip_files.items():
+            zip_buffer.seek(0)
+            combined_zip.writestr(f'class_{class_label}.zip', zip_buffer.read())
         
+        metadata_stats = {
+            # 'metadata': metadata,
+            'stats': stats
+        }
+        combined_zip.writestr('statistics.json', json.dumps(metadata_stats, indent=4))
+    
+    combined_zip_buffer.seek(0)
+    return combined_zip_buffer
+
 if __name__ == '__main__':
     app.run(debug=True)
