@@ -3,4 +3,5 @@ venv/
 __pycache__/
 /venv
 *.pt
+*.pth
 auto-py-to-exe/

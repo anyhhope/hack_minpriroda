@@ -5,3 +5,4 @@ flask-cors
 fastapi
 python-multipart
 uvicorn
+transformers
