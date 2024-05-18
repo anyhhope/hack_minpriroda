@@ -49,12 +49,3 @@ app.on('activate', () => {
     createWindow();
   }
 });
-
-// Handle file selection dialog
-ipcMain.handle('select-files', async () => {
-  const result = await dialog.showOpenDialog({
-    properties: ['openFile', 'multiSelections'],
-    filters: [{ name: 'Images', extensions: ['jpg', 'png', 'gif'] }],
-  });
-  return result.filePaths;
-});
