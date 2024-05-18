@@ -4,9 +4,13 @@ import zipfile
 import io
 import os
 from flask_cors import CORS
+from ultralytics import YOLO
+import torch
 
 app = Flask(__name__)
 CORS(app) 
+
+yolo_model = YOLO("yolo-first.pt")
 
 @app.route('/')
 def home():
@@ -32,6 +36,7 @@ def upload():
                                 'width': img.width,
                                 'height': img.height
                             })
+                            return jsonify(detect_img_with_yolo(img))
         else:
             img = Image.open(file.stream)
             metadata.append({
@@ -39,8 +44,20 @@ def upload():
                 'width': img.width,
                 'height': img.height
             })
+            return jsonify(detect_img_with_yolo(img))
 
     return jsonify(metadata)
 
+
+def detect_img_with_yolo(img):
+    results = yolo_model([img])
+    for res in results:
+        return {"probs": res.boxes.cls.tolist()}
+        boxes = res.boxes
+        for box in boxes:
+            b = box.xyxy[0]
+            c = box.cls
+            return {"class": c}
+        
 if __name__ == '__main__':
     app.run(debug=True)
