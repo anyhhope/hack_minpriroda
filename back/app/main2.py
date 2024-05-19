@@ -90,22 +90,19 @@ async def upload(files: List[UploadFile] = []):
 
     for file in files:
         if file.filename.endswith('.zip'):
-            with zipfile.ZipFile(file, 'r') as zip_ref:
+            file_bytes = await file.read()  
+            with zipfile.ZipFile(io.BytesIO(file_bytes), 'r') as zip_ref:
                 for zip_info in zip_ref.infolist():
                     if not zip_info.filename.endswith('/'):
                         with zip_ref.open(zip_info) as image_file:
-                            file_bytes = await image_file.read()
-                            img = Image.open(io.BytesIO(file_bytes))
+                            img_bytes = image_file.read()
+                            img = Image.open(io.BytesIO(img_bytes))
                             imagesList.append(img)
-                            imageByteList.append((zip_info.filename, file_bytes))
-                            # class_label = detect_img_with_yolo(img)
-                            # class_images[class_label].append((zip_info.filename, file_bytes))
-                            # class_counts[class_label] += 1
+                            imageByteList.append((zip_info.filename, img_bytes))
                             metadata.append({
                                 'filename': zip_info.filename,
                                 'width': img.width,
                                 'height': img.height,
-                                # 'class': class_label
                             })
         else:
             file_bytes = await file.read()
